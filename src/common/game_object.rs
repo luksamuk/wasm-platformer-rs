@@ -1,5 +1,7 @@
 use collision::primitives::Circle;
 use game::objects::*;
+use render::Renderer2D;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -13,7 +15,7 @@ pub trait GameComponent {
 pub trait GameObject {
     fn unload(&mut self);
     fn update(&mut self, dt: f64);
-    fn draw(&mut self);
+    fn draw(&mut self, renderer: &Renderer2D);
 
     fn bounding_circle(&self) -> Circle;
     

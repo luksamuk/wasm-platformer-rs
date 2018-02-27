@@ -43,9 +43,9 @@ use collision::partitioning::Quadtree;
 use common::game_object::wrap_to_ref;
 use common::game_object::GameObjectRef;
 
-use render::{ draw_box, draw_circle };
-
 use game::objects::Entity;
+
+use render::Renderer2D;
 
 
 /// Handles keyboard events.
@@ -83,8 +83,9 @@ fn main() {
     canvas.set_height(500);
 
     // Retrieve context
-    let ctx: CanvasRenderingContext2d = canvas.get_context().unwrap();
-
+    //let ctx: CanvasRenderingContext2d = canvas.get_context().unwrap();
+    // Create renderer
+    let renderer = Renderer2D::new(&canvas);
 
     // === CONFIGURING COLLISION AND ADDING DUMMIES ==
 
@@ -120,7 +121,7 @@ fn main() {
         let mut color_idx = 0;
         for pos in entity_pos {
             println!("Adding entity at ({}, {})...", pos.x, pos.y);
-            my_quadtree.add(wrap_to_ref(Entity::new(color_idx as u32, pos, colors[color_idx % 3], ctx.clone())));
+            my_quadtree.add(wrap_to_ref(Entity::new(color_idx as u32, pos, colors[color_idx % 3])));
             color_idx += 1;
         }
     }
@@ -141,7 +142,7 @@ fn main() {
     println!("Iterating over all entities...");
     for object in my_quadtree.iter() {
         object.borrow_mut().update(0.0);
-        object.borrow_mut().draw();
+        object.borrow_mut().draw(&renderer);
     }
 
     

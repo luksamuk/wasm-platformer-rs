@@ -3,9 +3,8 @@ use collision::primitives::Collidable;
 use collision::primitives::Circle;
 use common::game_object::{ GameObject, GameObjectRef };
 use std::cell::RefCell;
-
 use stdweb::web::CanvasRenderingContext2d;
-use render::{ draw_box, draw_circle };
+use render::Renderer2D;
 
 #[derive(Debug)]
 pub enum EntityType {
@@ -17,17 +16,15 @@ pub struct Entity {
     position: Vector2,
     color:    String,
     radius:   f64,
-    ctx:      CanvasRenderingContext2d
 }
 
 impl Entity {
-    pub fn new(id: u32, position: Vector2, color: &str, ctx: CanvasRenderingContext2d) -> Entity {
+    pub fn new(id: u32, position: Vector2, color: &str) -> Entity {
         Entity {
             id: id,
             position: position,
             color:    String::from(color),
-            radius:   50.0,
-            ctx:      ctx
+            radius:   50.0
         }
     }
 }
@@ -40,8 +37,8 @@ impl GameObject for Entity {
         println!("Object #{} performing logic update", self.id);
     }
 
-    fn draw(&mut self) {
-        draw_circle(&self.ctx, self.color.as_ref(), self.position, self.radius);
+    fn draw(&mut self, renderer: &Renderer2D) {
+        renderer.draw_circle(self.color.as_ref(), self.position, self.radius);
     }
 
     fn bounding_circle(&self) -> Circle {

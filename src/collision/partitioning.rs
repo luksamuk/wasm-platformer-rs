@@ -1,12 +1,9 @@
 //! Submodule related to spatial partitioning.
 
-// TODO: Collision testing. Might need iterators.
-
 use types::Vector2;
 use std::rc::Rc;
 use std::cell::RefCell;
 use common::game_object::{ GameObject, ObjectRef };
-//use std::collections::LinkedList;
 use collision::primitives::{ Circle, Collidable };
 
 type QuadtreeNodeCountedRef<T> = Rc<RefCell<QuadtreeNode<T>>>;
@@ -110,6 +107,7 @@ impl<T: GameObject> Quadtree<T> {
         }
     }
 
+    /// Yields an iterator for this quadtree.
     pub fn iter(&self) -> QuadtreeIter<T> {
         QuadtreeIter {
             nodes:   vec![QuadtreeIterNode {
@@ -200,7 +198,9 @@ struct QuadtreeIterNode<T: GameObject> {
     node:    QuadtreeNodeCountedRef<T>,
 }
 
-
+/// Iterator for Quadtree.
+/// Iterates on all objects on quadtree, though it doesn't guarantee
+/// an iteration order.
 pub struct QuadtreeIter<T: GameObject> {
     nodes:   Vec<QuadtreeIterNode<T>>,
 }
@@ -211,7 +211,7 @@ impl<T: 'static + GameObject> Iterator for QuadtreeIter<T> {
     fn next(&mut self) -> Option<ObjectRef<GameObject>> {
         // If not already iterated over, add all children
         // to read queue.
-        let was_read = self.nodes.last()?.read; // Hopefully rets None
+        let was_read = self.nodes.last()?.read; // Rets `None` when there is nobody else to read
         if !was_read {
             self.nodes.last_mut().unwrap().read = true;
             let node = self.nodes.last().unwrap().node.clone();
@@ -222,12 +222,14 @@ impl<T: 'static + GameObject> Iterator for QuadtreeIter<T> {
                     node:    node.clone(),
                 });
             }
-            //self.next()
         } else {
             let objects_len = self.nodes.last().unwrap().node.borrow().objects.len();
             let current = self.nodes.last().unwrap().current;
             if (current as usize) < objects_len {
                 self.nodes.last_mut().unwrap().current += 1;
+
+                // Since we iter over objects, then objects are the
+                // only thing we Ret inside an Option.
                 return Some(self.nodes.last().unwrap()
                             .node.borrow().objects[current as usize]
                             .clone());
@@ -236,7 +238,7 @@ impl<T: 'static + GameObject> Iterator for QuadtreeIter<T> {
                 self.nodes.pop();
             }
         }
+        // It's never enough tail recursions
         self.next()
-        //None
     }
 }
