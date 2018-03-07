@@ -1,6 +1,7 @@
 use types::Vector2;
 use stdweb::web::html_element::CanvasElement;
 use stdweb::web::CanvasRenderingContext2d;
+use std::f64::consts::PI;
 
 
 /// Represents a 2D renderer.
@@ -21,19 +22,16 @@ impl Renderer2D {
     
     /// Draws a colored box.
     pub fn draw_box(&self, color: &str, pos: Vector2, size: Vector2) {
-        js! { @{&self.ctx}.fillStyle = @{color}; } // Still needs to setup color manually
+        self.ctx.set_fill_style_color(color);
         self.ctx.fill_rect(pos.x, pos.y, size.x, size.y);
     }
 
     /// Draws a colored circle.
     pub fn draw_circle(&self, color: &str, pos: Vector2, radius: f64) {
-        // Still needs to be done manually
-        js! {
-            @{&self.ctx}.beginPath();
-            @{&self.ctx}.arc(@{pos.x}, @{pos.y}, @{radius}, 0, Math.PI * 2.0);
-            @{&self.ctx}.fillStyle = @{color};
-            @{&self.ctx}.fill();
-            @{&self.ctx}.closePath();
-        };
+        self.ctx.begin_path();
+        self.ctx.set_fill_style_color(color);
+        self.ctx.arc(pos.x, pos.y, radius, 0.0, PI * 2.0, false);
+        js!{ @(no_return) @{&self.ctx}.fill(); };
+        self.ctx.close_path();
     }
 }
