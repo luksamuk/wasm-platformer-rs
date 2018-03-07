@@ -8,9 +8,6 @@ use common::objects::GameObject;
 use common::objects::ObjectRef;
 use common::objects::wrap_to_ref;
 
-use std::thread::sleep;
-use std::time::Duration;
-
 /// Represents a game world.
 #[derive(Clone)]
 pub struct World {
@@ -42,12 +39,12 @@ impl World {
 
         
         // Random entities
-        let iterations = 4;
+        let iterations = 16;
         for _ in 0..iterations
         {
             let pos = Vector2 {
-                x: js!(return 100.0 + Math.floor((Math.random() * 300));).try_into().unwrap(),
-                y: js!(return 100.0 + Math.floor((Math.random() * 300));).try_into().unwrap()
+                x: js!(return 100.0 + Math.floor((Math.random() * 400));).try_into().unwrap(),
+                y: js!(return 100.0 + Math.floor((Math.random() * 400));).try_into().unwrap()
             };
             entity_pos.push(pos);
         }

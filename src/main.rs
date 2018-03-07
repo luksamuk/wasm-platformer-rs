@@ -71,7 +71,7 @@ fn main() {
     stdweb::initialize();
 
     // Retrieve canvas
-    let mut canvas: CanvasElement = web::document().get_element_by_id("viewport")
+    let canvas: CanvasElement = web::document().get_element_by_id("viewport")
         .unwrap()
         .try_into()
         .unwrap();
