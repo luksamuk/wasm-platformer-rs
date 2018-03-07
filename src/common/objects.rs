@@ -1,6 +1,5 @@
 use types::Vector2;
 use collision::primitives::Circle;
-use game::objects::*;
 use render::Renderer2D;
 
 use std::rc::Rc;

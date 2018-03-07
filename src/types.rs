@@ -1,7 +1,6 @@
 //! Module providing common types for the entire engine.
 
 use std::ops;
-use std::cmp::PartialEq;
 
 
 // Vector2: 2D vector

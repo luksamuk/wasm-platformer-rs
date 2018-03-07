@@ -1,6 +1,6 @@
 //! Module for common operations and objects.
 
-pub mod game_object;
+pub mod objects;
 
 macro_rules! println {
     ($fmt:expr) => (

@@ -1,7 +1,5 @@
 #![recursion_limit="2048"]
 
-use std::cell::RefCell;
-
 #[macro_use]
 extern crate stdweb;
 extern crate ref_eq;
@@ -12,8 +10,7 @@ use stdweb::web::html_element::CanvasElement;
 use stdweb::web::{
     self,
     IEventTarget,
-    INonElementParentNode,
-    CanvasRenderingContext2d
+    INonElementParentNode
 };
 use stdweb::web::event::{
     IEvent,
@@ -40,10 +37,8 @@ use types::Vector2;
 
 use collision::partitioning::Quadtree;
 
-use common::game_object::GameObject;
-use common::game_object::wrap_to_ref;
-use common::game_object::GameObjectRef;
-use common::game_object::ObjectRef;
+use common::objects::GameObject;
+use common::objects::wrap_to_ref;
 
 use game::objects::Entity;
 
@@ -51,20 +46,20 @@ use render::Renderer2D;
 
 
 /// Handles keyboard events.
-fn on_key(key: &str, location: KeyboardLocation, is_pressed: bool) -> bool {
-    let location = format!("{:?}", location);
+fn on_key(_key: &str, location: KeyboardLocation, _is_pressed: bool) -> bool {
+    let _location = format!("{:?}", location);
     true
 }
 
 
 /// Handles mouse presses (up and down).
-fn on_mouse_click(btn: MouseButton, is_pressed: bool, pos: (f64, f64)) -> bool {
-    let btn = format!("{:?}", btn);
+fn on_mouse_click(btn: MouseButton, _is_pressed: bool, _pos: (f64, f64)) -> bool {
+    let _btn = format!("{:?}", btn);
     true
 }
 
 /// Handles sole mouse movement, without presses.
-fn on_mouse_move(pos: (f64, f64)) -> bool {
+fn on_mouse_move(_pos: (f64, f64)) -> bool {
     true
 }
 

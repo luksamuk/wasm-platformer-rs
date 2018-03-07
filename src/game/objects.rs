@@ -1,9 +1,6 @@
 use types::Vector2;
-use collision::primitives::Collidable;
 use collision::primitives::Circle;
-use common::game_object::{ GameObject, GameObjectRef };
-use std::cell::RefCell;
-use stdweb::web::CanvasRenderingContext2d;
+use common::objects::{ GameObject, GameObjectRef };
 use render::Renderer2D;
 
 #[derive(Debug)]

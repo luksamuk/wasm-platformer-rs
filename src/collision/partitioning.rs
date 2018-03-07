@@ -3,8 +3,8 @@
 use types::Vector2;
 use std::rc::Rc;
 use std::cell::RefCell;
-use common::game_object::{ GameObject, ObjectRef, GameObjectRef };
-use collision::primitives::{ Circle, Collidable };
+use common::objects::{ GameObject, ObjectRef };
+use collision::primitives::Collidable;
 
 type QuadtreeNodeCountedRef<T> = Rc<RefCell<QuadtreeNode<T>>>;
 type QuadtreeRemoveResult<T>   = Result<ObjectRef<T>, &'static str>;
