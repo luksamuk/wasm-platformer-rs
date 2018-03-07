@@ -34,14 +34,10 @@ pub mod render;    // Rendering and etc
 pub mod game;      // Actual specific game objects (Entity, etc)
 
 use types::Vector2;
-
 use collision::partitioning::Quadtree;
-
 use common::objects::GameObject;
 use common::objects::wrap_to_ref;
-
 use game::objects::Entity;
-
 use render::Renderer2D;
 
 
