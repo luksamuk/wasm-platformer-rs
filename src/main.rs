@@ -25,8 +25,6 @@ use stdweb::web::event::{
     MouseMoveEvent
 };
 
-use std::sync::Mutex;
-
 
 #[macro_use]
 pub mod common;    // Game objects, special println!, etc
@@ -57,11 +55,28 @@ fn on_mouse_move(_pos: (f64, f64)) -> bool {
     true
 }
 
-fn semi_loop(mut world: World) {
-    world.game_step();
+fn get_current_time() -> u64 {
+    // Oops. Following works only for desktop.
+    /*
+    use std::time::{ SystemTime, UNIX_EPOCH };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap();
+    now.as_secs() * 1000 +
+    now.subsec_nanos() as u64 / 1_000_000*/
+
+    // The following works OK for WASM, though it relies on JS.
+    let now: u64 = js! { return Date.now() }.try_into().unwrap();
+    now
+}
+
+fn semi_loop(mut world: World, last_time: u64) {
+    let current_time = get_current_time();
+    let delta = (current_time - last_time) as f64 / 1000.0;
+    world.game_step(delta);
 
     web::window().request_animation_frame(move |_| {
-        semi_loop(world.clone());
+        semi_loop(world.clone(), current_time);
     });
 }
 
@@ -126,7 +141,7 @@ fn main() {
     });
 
     web::window().request_animation_frame(move |_| {
-        semi_loop(world.clone());
+        semi_loop(world.clone(), get_current_time());
     });
     
     stdweb::event_loop();

@@ -17,6 +17,7 @@ pub struct World {
 }
 
 impl World {
+    /// Yields a new instance of a World.
     pub fn new(renderer: Renderer2D, world_max_size: f64) -> Self {
         World {
             // TODO: Figure out a better way to define depth
@@ -26,6 +27,8 @@ impl World {
         }
     }
 
+    /// Initializes the world.
+    /// Currently, this serves only debugging purposes.
     pub fn init(&mut self) {
         // Add test entities
         let mut entity_pos = vec![];
@@ -60,7 +63,8 @@ impl World {
         }
     }
 
-    pub fn game_step(&mut self) {
+    /// Executes a step in the World, updating logic, rendering and collision.
+    pub fn game_step(&mut self, dt: f64) {
         // == Collision pass == //
         self.partitions.borrow_mut().test_collisions();
 
@@ -73,7 +77,7 @@ impl World {
             //println!("Render one");
             // == Update pass == //
             let old_position = object.borrow().get_position();
-            object.borrow_mut().update(0.0); // TODO: Count this properly
+            object.borrow_mut().update(dt);
             let new_position = object.borrow().get_position();
 
             // == Draw pass == //

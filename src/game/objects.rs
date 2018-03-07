@@ -45,13 +45,17 @@ impl GameObject for Entity {
     fn update(&mut self, dt: f64) {
         if self.id == 0 {
             // Small circle moves rapidly
-            self.counter = ((self.counter as u32 + 1) % 360) as f64;
+            self.counter = ((self.counter as u32 +
+                             (120.0 * dt) as u32)
+                            % 360) as f64;
+            
             let distance = 250.0 * (self.counter * 2.0).to_radians().sin();
             self.position.x = 250.0 + (distance * self.counter.to_radians().cos());
             self.position.y = 250.0 + (distance * self.counter.to_radians().sin());
         } else {
             // Bigger circles move gracefully
-            self.counter = ((self.counter as u32 + 1) % 1440) as f64;
+            self.counter = ((self.counter as u32 + (120.0 * dt) as u32) % 1440) as f64;
+            
             let distance = (self.counter / 4.0).to_radians();
             self.position.x = self.original.x + 20.0 * distance.sin()
                 * if self.id % 2 == 0 { -1.0 } else { 1.0 } * self.speed;
