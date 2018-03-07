@@ -19,6 +19,7 @@ pub trait GameObject {
 
     fn bounding_circle(&self) -> Circle;
     fn get_position(&self) -> Vector2;
+    fn get_id(&self) -> u32;
 
     
     fn on_collision(&mut self, other: ObjectRef<GameObject>);

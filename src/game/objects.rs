@@ -16,6 +16,7 @@ pub struct Entity {
 
     counter:  f64,
     collided: (u32, u32),
+    change_color: bool,
 }
 
 impl Entity {
@@ -24,9 +25,10 @@ impl Entity {
             id: id,
             position: position,
             color:    if id == 0 { String::from("#112233") } else { String::from(color) },
-            radius:   50.0,
+            radius:   if id == 0 { 20.0 } else { 50.0 },
             counter:  0.0,
             collided: (0, 0),
+            change_color: false,
         }
     }
 }
@@ -36,22 +38,25 @@ impl GameObject for Entity {
     }
     
     fn update(&mut self, dt: f64) {
-        //println!("Object #{} performing logic update", self.id);
         if self.id == 0 {
             self.counter = ((self.counter as u32 + 1) % 360) as f64;
-            self.position.x = 250.0 + (130.0 * self.counter.to_radians().cos());
-            self.position.y = 250.0 + (130.0 * self.counter.to_radians().sin());
-
-            if self.collided.0 != self.collided.1 {
-                println!("Obj #0 colliding w/ {} objects", self.collided.0);
-            }
-            self.collided.1 = self.collided.0;
-            self.collided.0 = 0;
+            
+            let distance = 180.0 * (self.counter * 2.0).to_radians().sin();
+            
+            self.position.x = 250.0 + (distance * self.counter.to_radians().cos());
+            self.position.y = 250.0 + (distance * self.counter.to_radians().sin());
         }
+
+        self.change_color = self.collided.0 != 0;
+        self.collided.1 = self.collided.0;
+        self.collided.0 = 0;
     }
 
     fn draw(&mut self, renderer: &Renderer2D) {
-        renderer.draw_circle(self.color.as_ref(), self.position, self.radius);
+        renderer.draw_circle(
+            if self.id != 0 && self.change_color { "#1122337f" } else { self.color.as_ref() },
+            self.position,
+            self.radius);
     }
 
     fn bounding_circle(&self) -> Circle {
@@ -62,9 +67,12 @@ impl GameObject for Entity {
         self.position
     }
 
+    fn get_id(&self) -> u32 {
+        self.id
+    }
+
     fn on_collision(&mut self, other: GameObjectRef) {
-        if self.id == 0 {
-            //println!("Collided #{} with other entity", self.id);
+        if other.borrow().get_id() == 0 {
             self.collided.0 += 1;
         }
     }
