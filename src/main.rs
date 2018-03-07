@@ -25,6 +25,8 @@ use stdweb::web::event::{
     MouseMoveEvent
 };
 
+use std::sync::Mutex;
+
 
 #[macro_use]
 pub mod common;    // Game objects, special println!, etc
@@ -33,11 +35,7 @@ pub mod collision; // Bounding volumes, collision, partitioning, etc
 pub mod render;    // Rendering and etc
 pub mod game;      // Actual specific game objects (Entity, etc)
 
-use types::Vector2;
-use collision::partitioning::Quadtree;
-use common::objects::GameObject;
-use common::objects::wrap_to_ref;
-use game::objects::Entity;
+use game::world::World;
 use render::Renderer2D;
 
 
@@ -59,13 +57,21 @@ fn on_mouse_move(_pos: (f64, f64)) -> bool {
     true
 }
 
+fn semi_loop(mut world: World) {
+    world.game_step();
+
+    web::window().request_animation_frame(move |_| {
+        semi_loop(world.clone());
+    });
+}
+
 
 
 fn main() {
     stdweb::initialize();
 
     // Retrieve canvas
-    let canvas: CanvasElement = web::document().get_element_by_id("viewport")
+    let mut canvas: CanvasElement = web::document().get_element_by_id("viewport")
         .unwrap()
         .try_into()
         .unwrap();
@@ -73,97 +79,11 @@ fn main() {
     canvas.set_height(500);
 
     // Create renderer
-    let renderer = Renderer2D::new(&canvas);
+    let renderer: Renderer2D = Renderer2D::new(&canvas);
 
-    // === CONFIGURING COLLISION AND ADDING DUMMIES ==
-
-    println!("Creating quadtree...");
-    let mut my_quadtree: Quadtree<Entity> = Quadtree::new(Vector2::zero(), 400.0, 4);
-    println!("Done.");
-
-
-    // Test entities
-    let mut entity_pos = vec![];
-    let colors = vec!["#ff00007f", "#00ff007f", "#0000ff7f"];
-
-
-    // Fixed entities
-    entity_pos.push(Vector2 { x: 200.0, y: 200.0 });
-    entity_pos.push(Vector2 { x: 300.0, y: 200.0 });
-    entity_pos.push(Vector2 { x: 250.0, y: 250.0 });
-
-    
-    // Random entities
-    let iterations = 4;
-    for _ in 0..iterations
-    {
-        let pos = Vector2 {
-            x: js!(return 100.0 + Math.floor((Math.random() * 300));).try_into().unwrap(),
-            y: js!(return 100.0 + Math.floor((Math.random() * 300));).try_into().unwrap()
-        };
-        entity_pos.push(pos);
-    }
-    
-    // Finally, add them
-    {
-        let mut color_idx = 0;
-        for pos in entity_pos {
-            println!("Adding entity at ({}, {})...", pos.x, pos.y);
-            my_quadtree.add(wrap_to_ref(Entity::new(color_idx as u32, pos, colors[color_idx % 3])));
-            color_idx += 1;
-        }
-    }
-
-    
-
-
-    // === COLLISION PASS ===
-
-    
-    println!("Testing all collisions...");
-    my_quadtree.test_collisions();
-    println!("Done!");
-
-
-    // === GAMELOOP ITERATION PASS ===
-
-    println!("Iterating over all entities...");
-    for object in my_quadtree.iter() {
-        let old_position = object.borrow().get_position();
-        object.borrow_mut().update(0.0);
-        let new_position = object.borrow().get_position();
-        
-        object.borrow_mut().draw(&renderer);
-
-        if old_position != new_position {
-            println!("Scheduling object relocation");
-            my_quadtree.schedule_update(object.clone(), old_position);
-        }
-    }
-
-    println!("Relocating updated objects...");
-    let _ = my_quadtree.update_positions();
-
-    renderer.clear();
-
-    println!("Testing all collisions...");
-    my_quadtree.test_collisions();
-    println!("Done!");
-
-    println!("Iterating over all entities...");
-    for object in my_quadtree.iter() {
-        let old_position = object.borrow().get_position();
-        object.borrow_mut().update(0.0);
-        let new_position = object.borrow().get_position();
-        
-        object.borrow_mut().draw(&renderer);
-
-        if old_position != new_position {
-            console!(log, "Scheduling object relocation");
-            my_quadtree.schedule_update(object.clone(), old_position);
-        }
-    }
-
+    // Create world
+    let mut world: World = World::new(renderer, 800.0);
+    world.init();
     
 
 
@@ -205,7 +125,9 @@ fn main() {
         }
     });
 
-    
+    web::window().request_animation_frame(move |_| {
+        semi_loop(world.clone());
+    });
     
     stdweb::event_loop();
 }

@@ -5,6 +5,7 @@ use std::f64::consts::PI;
 
 
 /// Represents a 2D renderer.
+#[derive(Clone)]
 pub struct Renderer2D {
     ctx: CanvasRenderingContext2d,
     sz:  Vector2,

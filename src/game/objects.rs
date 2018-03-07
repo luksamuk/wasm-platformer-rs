@@ -13,6 +13,9 @@ pub struct Entity {
     position: Vector2,
     color:    String,
     radius:   f64,
+
+    counter:  f64,
+    collided: (u32, u32),
 }
 
 impl Entity {
@@ -21,7 +24,9 @@ impl Entity {
             id: id,
             position: position,
             color:    if id == 0 { String::from("#112233") } else { String::from(color) },
-            radius:   50.0
+            radius:   50.0,
+            counter:  0.0,
+            collided: (0, 0),
         }
     }
 }
@@ -31,9 +36,17 @@ impl GameObject for Entity {
     }
     
     fn update(&mut self, dt: f64) {
-        println!("Object #{} performing logic update", self.id);
+        //println!("Object #{} performing logic update", self.id);
         if self.id == 0 {
-            self.position.x -= 100.0;
+            self.counter = ((self.counter as u32 + 1) % 360) as f64;
+            self.position.x = 250.0 + (130.0 * self.counter.to_radians().cos());
+            self.position.y = 250.0 + (130.0 * self.counter.to_radians().sin());
+
+            if self.collided.0 != self.collided.1 {
+                println!("Obj #0 colliding w/ {} objects", self.collided.0);
+            }
+            self.collided.1 = self.collided.0;
+            self.collided.0 = 0;
         }
     }
 
@@ -50,6 +63,9 @@ impl GameObject for Entity {
     }
 
     fn on_collision(&mut self, other: GameObjectRef) {
-        println!("Collided #{} with other entity", self.id);
+        if self.id == 0 {
+            //println!("Collided #{} with other entity", self.id);
+            self.collided.0 += 1;
+        }
     }
 }
