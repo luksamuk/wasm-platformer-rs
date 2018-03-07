@@ -7,6 +7,7 @@ use std::f64::consts::PI;
 /// Represents a 2D renderer.
 pub struct Renderer2D {
     ctx: CanvasRenderingContext2d,
+    sz:  Vector2,
 }
 
 
@@ -17,6 +18,7 @@ impl Renderer2D {
     pub fn new(canvas: &CanvasElement) -> Self {
         Renderer2D {
             ctx: canvas.get_context().unwrap(),
+            sz:  Vector2 { x: canvas.width() as f64, y: canvas.height() as f64 },
         }
     }
     
@@ -33,5 +35,10 @@ impl Renderer2D {
         self.ctx.arc(pos.x, pos.y, radius, 0.0, PI * 2.0, false);
         js!{ @(no_return) @{&self.ctx}.fill(); };
         self.ctx.close_path();
+    }
+    
+    /// Clears the screen.
+    pub fn clear(&self) {
+        self.ctx.clear_rect(0.0, 0.0, self.sz.x, self.sz.y);
     }
 }

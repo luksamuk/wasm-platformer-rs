@@ -23,7 +23,7 @@ impl Entity {
         Entity {
             id: id,
             position: position,
-            color:    String::from(color),
+            color:    if id == 0 { String::from("#112233") } else { String::from(color) },
             radius:   50.0
         }
     }
@@ -35,6 +35,9 @@ impl GameObject for Entity {
     
     fn update(&mut self, dt: f64) {
         println!("Object #{} performing logic update", self.id);
+        if self.id == 0 {
+            self.position.x -= 100.0;
+        }
     }
 
     fn draw(&mut self, renderer: &Renderer2D) {
@@ -43,6 +46,10 @@ impl GameObject for Entity {
 
     fn bounding_circle(&self) -> Circle {
         Circle { center: self.position, radius: self.radius }
+    }
+
+    fn get_position(&self) -> Vector2 {
+        self.position
     }
 
     fn on_collision(&mut self, other: GameObjectRef) {

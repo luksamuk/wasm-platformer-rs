@@ -1,3 +1,4 @@
+use types::Vector2;
 use collision::primitives::Circle;
 use game::objects::*;
 use render::Renderer2D;
@@ -18,6 +19,8 @@ pub trait GameObject {
     fn draw(&mut self, renderer: &Renderer2D);
 
     fn bounding_circle(&self) -> Circle;
+    fn get_position(&self) -> Vector2;
+
     
     fn on_collision(&mut self, other: ObjectRef<GameObject>);
 }

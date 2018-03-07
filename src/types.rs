@@ -1,6 +1,7 @@
 //! Module providing common types for the entire engine.
 
 use std::ops;
+use std::cmp::PartialEq;
 
 
 // Vector2: 2D vector
@@ -11,7 +12,7 @@ use std::ops;
 /// a C struct is, so that, if needed, we can cast this
 /// to an array.
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vector2 {
     pub x: f64,
     pub y: f64,

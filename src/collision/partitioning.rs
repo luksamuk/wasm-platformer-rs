@@ -3,10 +3,11 @@
 use types::Vector2;
 use std::rc::Rc;
 use std::cell::RefCell;
-use common::game_object::{ GameObject, ObjectRef };
+use common::game_object::{ GameObject, ObjectRef, GameObjectRef };
 use collision::primitives::{ Circle, Collidable };
 
 type QuadtreeNodeCountedRef<T> = Rc<RefCell<QuadtreeNode<T>>>;
+type QuadtreeRemoveResult<T>   = Result<ObjectRef<T>, &'static str>;
 
 #[derive(Clone)]
 #[repr(C)]
@@ -47,6 +48,51 @@ impl<T: GameObject> QuadtreeNode<T> {
             self.objects.push(object);
         }
     }
+
+    fn remove(&mut self, object: ObjectRef<T>, old_position: Vector2) -> QuadtreeRemoveResult<T> {
+        // Most of this function is like the add function
+        let mut index: usize = 0;
+        let mut straddle = false;
+        let mut bounds = object.borrow().bounding_circle();
+        bounds.center = old_position; // We need to check relative to the old object position
+        let delta = bounds.center - self.center;
+
+        // Check for X
+        if delta.x.abs() > bounds.radius {
+            if delta.x > 0.0 { index |= 1; }
+            // Check for Y
+            if delta.y.abs() > bounds.radius {
+                if delta.y > 0.0 { index |= 2; }
+            } else { straddle = true; }
+        } else { straddle = true; }
+
+        if !straddle && !self.children.is_empty() {
+            // We need to check on child nodes, because it is
+            // fully contained in there!
+            self.children[index].borrow_mut().remove(object, old_position)
+        } else {
+            // It is likely here. If it is here, I mean.
+            let mut contains = false;
+            let mut index    = 0;
+            use ref_eq::ref_eq;
+            for elem in &self.objects {
+                if ref_eq(&*elem, &object) {
+                    contains = true;
+                    break;
+                }
+                index += 1;
+            }
+
+            if !contains {
+                Err("Object does not exist in this quadtree")
+            } else {
+                println!("Fst len: {}", self.objects.len());
+                let object = self.objects.remove(index);
+                println!("Snd len: {}", self.objects.len());
+                Ok(object)
+            }
+        }
+    }
 }
 
 
@@ -61,6 +107,9 @@ pub struct Quadtree<T: GameObject> {
     // For iteration purposes only!
     // Must always have len() zero after an iteration.
     ancestors: Vec<Option<QuadtreeNodeCountedRef<T>>>,
+
+    // Schedule for update
+    update_queue: Vec<(ObjectRef<T>, Vector2)>,
 }
 
 // Constructor
@@ -68,8 +117,10 @@ impl<T: GameObject> Quadtree<T> {
     /// Creates a new quadtree.
     /// # Arguments
     /// `center` - Center of space to be partitioned.
+    ///
     /// `half_width` - Half-width of space to be partitioned. Remember that the quadtree
     /// assumes a squared space, not a rectangular one.
+    ///
     /// `max-depth` - Maximum depth the quadtree can reach. If no depth is provided,
     /// the tree will only divide the space in four areas. A depth of three should be fine
     /// for simple cases.
@@ -78,6 +129,7 @@ impl<T: GameObject> Quadtree<T> {
             root: Quadtree::build_tree(center, half_width, max_depth + 1).unwrap(),
             max_depth: max_depth,
             ancestors: vec![],
+            update_queue: vec![],
         }
     }
     
@@ -127,6 +179,36 @@ impl<T: 'static + GameObject> Quadtree<T> {
     /// partitioning structure.
     pub fn add(&mut self, object: ObjectRef<T>) {
         self.root.borrow_mut().add(object);
+    }
+
+    /// Removes a game object from the quadtree.
+    /// # Arguments
+    /// `object` - A reference to the dynamically-allocated object which should be removed
+    ///
+    /// `old_position` - Object position prior to its change, if changed.
+    pub fn remove(&mut self, object: ObjectRef<T>, old_position: Vector2) -> QuadtreeRemoveResult<T> {
+        self.root.borrow_mut().remove(object, old_position)
+    }
+
+    /// Schedules a game object for positioning update.
+    /// # Arguments
+    /// `object` - A reference to the dynamically-allocated object which should be updated
+    ///
+    /// `old_position` - Object position prior to its change.
+    pub fn schedule_update(&mut self, object: ObjectRef<T>, old_position: Vector2) {
+        self.update_queue.push((object.clone(), old_position));
+    }
+
+    /// Updates pending objects which need repositioning.
+    /// Yields an error string on failure.
+    pub fn update_positions(&mut self) -> Result<(), &str> {
+        let update_queue = self.update_queue.clone();
+        self.update_queue.clear();
+        for pair in update_queue.iter() {
+            self.remove(pair.0.clone(), pair.1)?;
+            self.add(pair.0.clone());
+        }
+        Ok(())
     }
 
     /// Tests all collisions between objects, calling
@@ -206,9 +288,9 @@ pub struct QuadtreeIter<T: GameObject> {
 }
 
 impl<T: 'static + GameObject> Iterator for QuadtreeIter<T> {
-    type Item = ObjectRef<GameObject>;
+    type Item = ObjectRef<T>;
 
-    fn next(&mut self) -> Option<ObjectRef<GameObject>> {
+    fn next(&mut self) -> Option<ObjectRef<T>> {
         // If not already iterated over, add all children
         // to read queue.
         let was_read = self.nodes.last()?.read; // Rets `None` when there is nobody else to read

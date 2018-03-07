@@ -40,8 +40,10 @@ use types::Vector2;
 
 use collision::partitioning::Quadtree;
 
+use common::game_object::GameObject;
 use common::game_object::wrap_to_ref;
 use common::game_object::GameObjectRef;
+use common::game_object::ObjectRef;
 
 use game::objects::Entity;
 
@@ -51,7 +53,6 @@ use render::Renderer2D;
 /// Handles keyboard events.
 fn on_key(key: &str, location: KeyboardLocation, is_pressed: bool) -> bool {
     let location = format!("{:?}", location);
-    //console!(log, "Key: ", key, ", location: ", location, ", pressed: ", is_pressed);
     true
 }
 
@@ -59,13 +60,11 @@ fn on_key(key: &str, location: KeyboardLocation, is_pressed: bool) -> bool {
 /// Handles mouse presses (up and down).
 fn on_mouse_click(btn: MouseButton, is_pressed: bool, pos: (f64, f64)) -> bool {
     let btn = format!("{:?}", btn);
-    //console!(log, "MPos: (", pos.0, ", ", pos.1, ") MBtn: ", btn, " pressed: ", is_pressed);
     true
 }
 
 /// Handles sole mouse movement, without presses.
 fn on_mouse_move(pos: (f64, f64)) -> bool {
-    //console!(log, "MPos: (", pos.0, ", ", pos.1, ")");
     true
 }
 
@@ -82,8 +81,6 @@ fn main() {
     canvas.set_width(580);
     canvas.set_height(500);
 
-    // Retrieve context
-    //let ctx: CanvasRenderingContext2d = canvas.get_context().unwrap();
     // Create renderer
     let renderer = Renderer2D::new(&canvas);
 
@@ -141,8 +138,39 @@ fn main() {
 
     println!("Iterating over all entities...");
     for object in my_quadtree.iter() {
+        let old_position = object.borrow().get_position();
         object.borrow_mut().update(0.0);
+        let new_position = object.borrow().get_position();
+        
         object.borrow_mut().draw(&renderer);
+
+        if old_position != new_position {
+            println!("Scheduling object relocation");
+            my_quadtree.schedule_update(object.clone(), old_position);
+        }
+    }
+
+    println!("Relocating updated objects...");
+    let _ = my_quadtree.update_positions();
+
+    renderer.clear();
+
+    println!("Testing all collisions...");
+    my_quadtree.test_collisions();
+    println!("Done!");
+
+    println!("Iterating over all entities...");
+    for object in my_quadtree.iter() {
+        let old_position = object.borrow().get_position();
+        object.borrow_mut().update(0.0);
+        let new_position = object.borrow().get_position();
+        
+        object.borrow_mut().draw(&renderer);
+
+        if old_position != new_position {
+            console!(log, "Scheduling object relocation");
+            my_quadtree.schedule_update(object.clone(), old_position);
+        }
     }
 
     
