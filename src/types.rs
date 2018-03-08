@@ -38,6 +38,15 @@ impl Vector2 {
     pub fn one() -> Vector2 {
         Vector2 { x: 1.0, y: 1.0 }
     }
+
+    /// Yields a new 2D vector with the
+    /// floor of both axes.
+    pub fn floor(&self) -> Vector2 {
+        Vector2 {
+            x: self.x.floor(),
+            y: self.y.floor(),
+        }
+    }
 }
 
 // Vector2 arithmetic

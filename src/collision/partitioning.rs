@@ -4,7 +4,7 @@ use types::Vector2;
 use std::rc::Rc;
 use std::cell::RefCell;
 use common::objects::{ GameObject, ObjectRef };
-use collision::primitives::Collidable;
+use collision::primitives::{ Collidable, Circle };
 
 type QuadtreeNodeCountedRef<T> = Rc<RefCell<QuadtreeNode<T>>>;
 type QuadtreeRemoveResult<T>   = Result<ObjectRef<T>, &'static str>;
@@ -18,6 +18,9 @@ struct QuadtreeNode<T: GameObject> {
     objects:  Vec<ObjectRef<T>>,
 }
 
+// TODO: These functions repeat the same algorithm for checking if the
+// boundaries are contained inside the current node! We should DEFINITELY
+// outsource them!
 impl<T: GameObject> QuadtreeNode<T> {
     fn add(&mut self, object: ObjectRef<T>) {
         let mut index: usize = 0;
@@ -93,6 +96,38 @@ impl<T: GameObject> QuadtreeNode<T> {
             }
         }
     }
+
+    fn local_iter(node: ObjectRef<QuadtreeNode<T>>, bounds: Circle) -> QuadtreeIter<T> {
+        // Like add and remove, check whether the bounding circle
+        // is contained inside this area. If it is, then it is wise
+        // to find a more specific iterator on the subtrees.
+        let mut index: usize = 0;
+        let mut straddle = false;
+        let delta = bounds.center - node.borrow().center;
+
+        // Check for X
+        if delta.x.abs() > bounds.radius {
+            if delta.x > 0.0 { index |= 1; }
+            // Check for Y
+            if delta.y.abs() > bounds.radius {
+                if delta.y > 0.0 { index |= 2; }
+            } else { straddle = true; }
+        } else { straddle = true; }
+
+        if !straddle && !node.borrow().children.is_empty() {
+            // We need a more local iterator
+            QuadtreeNode::local_iter(node.borrow().children[index].clone(), bounds)
+            //self.borrow().children[index].borrow().local_iter(bounds)
+        } else {
+            // Yup, we need to start here
+            QuadtreeIter {
+                nodes:   vec![QuadtreeIterNode {
+                    current: 0,
+                    read: false,
+                    node: node.clone() }],
+            }
+        }
+    }
 }
 
 
@@ -116,12 +151,12 @@ pub struct Quadtree<T: GameObject> {
 impl<T: GameObject> Quadtree<T> {
     /// Creates a new quadtree.
     /// # Arguments
-    /// `center` - Center of space to be partitioned.
+    /// * `center` - Center of space to be partitioned.
     ///
-    /// `half_width` - Half-width of space to be partitioned. Remember that the quadtree
+    /// * `half_width` - Half-width of space to be partitioned. Remember that the quadtree
     /// assumes a squared space, not a rectangular one.
     ///
-    /// `max-depth` - Maximum depth the quadtree can reach. If no depth is provided,
+    /// * `max-depth` - Maximum depth the quadtree can reach. If no depth is provided,
     /// the tree will only divide the space in four areas. A depth of three should be fine
     /// for simple cases.
     pub fn new(center: Vector2, half_width: f64, max_depth: u32) -> Quadtree<T> {
@@ -168,6 +203,15 @@ impl<T: GameObject> Quadtree<T> {
                 node: self.root.clone() }],
         }
     }
+
+    /// Yields an iterator which is local to the provided bounding
+    /// circle.
+    /// Use this to iterate over elements that are overlapped by a
+    /// certain primitive. Useful when it comes to iterating at
+    /// onscreen objects.
+    pub fn local_iter(&self, bounding_circle: Circle) -> QuadtreeIter<T> {
+        QuadtreeNode::local_iter(self.root.clone(), bounding_circle)
+    }
 }
 
 
@@ -175,7 +219,7 @@ impl<T: GameObject> Quadtree<T> {
 impl<T: 'static + GameObject> Quadtree<T> {
     /// Adds a game object to the quadtree.
     /// # Arguments
-    /// `object` - A dynamically-allocated object which should be added to spatial
+    /// * `object` - A dynamically-allocated object which should be added to spatial
     /// partitioning structure.
     pub fn add(&mut self, object: ObjectRef<T>) {
         self.root.borrow_mut().add(object);
@@ -183,18 +227,18 @@ impl<T: 'static + GameObject> Quadtree<T> {
 
     /// Removes a game object from the quadtree.
     /// # Arguments
-    /// `object` - A reference to the dynamically-allocated object which should be removed
+    /// * `object` - A reference to the dynamically-allocated object which should be removed
     ///
-    /// `old_position` - Object position prior to its change, if changed.
+    /// * `old_position` - Object position prior to its change, if changed.
     pub fn remove(&mut self, object: ObjectRef<T>, old_position: Vector2) -> QuadtreeRemoveResult<T> {
         self.root.borrow_mut().remove(object, old_position)
     }
 
     /// Schedules a game object for positioning update.
     /// # Arguments
-    /// `object` - A reference to the dynamically-allocated object which should be updated
+    /// * `object` - A reference to the dynamically-allocated object which should be updated
     ///
-    /// `old_position` - Object position prior to its change.
+    /// * `old_position` - Object position prior to its change.
     pub fn schedule_update(&mut self, object: ObjectRef<T>, old_position: Vector2) {
         self.update_queue.push((object.clone(), old_position));
     }

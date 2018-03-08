@@ -39,9 +39,6 @@ impl Entity {
 }
 
 impl GameObject for Entity {
-    fn unload(&mut self) {
-    }
-    
     fn update(&mut self, dt: f64) {
         if self.id == 0 {
             // Small circle moves rapidly

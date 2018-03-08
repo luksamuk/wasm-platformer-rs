@@ -9,9 +9,19 @@ pub trait Collidable<T> {
     /// Checks whether the object implementing this trait
     /// collides with another one.
     /// # Arguments
-    /// `other` - Reference to the other object, which impls
+    /// * `other` - Reference to the other object, which impls
     /// this trait as well.
     fn collides(&self, other: &T) -> bool;
+
+    
+}
+
+/// Common trait for all objects that can be contained
+/// inside another primitive.
+pub trait Delimitable {
+    /// Yields a bounding circle for the collidable, which
+    /// will prove useful in spatial partitioning situations.
+    fn bounding_circle(&self) -> Circle;
 }
 
 
@@ -19,7 +29,7 @@ pub trait Collidable<T> {
 
 /// Represents an axis-aligned bounding box.
 /// Stores its center point and its two half-sizes.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AABB {
     pub center: Vector2,
     pub halfws: [f64; 2],
@@ -49,6 +59,15 @@ impl AABB {
 // Collision implementations for AABB, interacting with other
 // bounding volumes
 
+impl Delimitable for AABB {
+    fn bounding_circle(&self) -> Circle {
+        Circle {
+            center: self.center,
+            radius: self.halfws[0].max(self.halfws[1]),
+        }
+    }
+}
+
 impl Collidable<AABB> for AABB {
     fn collides(&self, other: &AABB) -> bool {
         let mut r;
@@ -74,7 +93,7 @@ impl Collidable<Circle> for AABB {
 
 /// Represents a circle.
 /// Stores its center point and its radius.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Circle {
     pub center: Vector2,
     pub radius: f64,
@@ -82,6 +101,12 @@ pub struct Circle {
 
 // Collision implementations for Circle, interacting with other
 // bounding volumes
+
+impl Delimitable for Circle {
+    fn bounding_circle(&self) -> Circle {
+        self.clone()
+    }
+}
 
 impl Collidable<Circle> for Circle {
     fn collides(&self, other: &Circle) -> bool {
@@ -113,6 +138,7 @@ impl Collidable<AABB> for Circle {
 /// and the nearest point on an AABB.
 /// # Arguments
 /// * `p` - Reference to point
+///
 /// * `b` - Reference to AABB
 fn sqdist_vector2_aabb(p: &Vector2, b: &AABB) -> f64 {
     let mut sq_dist = 0.0;

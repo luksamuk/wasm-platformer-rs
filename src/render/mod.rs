@@ -7,8 +7,9 @@ use std::f64::consts::PI;
 /// Represents a 2D renderer.
 #[derive(Clone)]
 pub struct Renderer2D {
-    ctx: CanvasRenderingContext2d,
-    sz:  Vector2,
+    ctx:        CanvasRenderingContext2d,
+    sz:         Vector2,
+    camera_pos: Vector2,
 }
 
 
@@ -20,17 +21,30 @@ impl Renderer2D {
         Renderer2D {
             ctx: canvas.get_context().unwrap(),
             sz:  Vector2 { x: canvas.width() as f64, y: canvas.height() as f64 },
+            camera_pos: Vector2::zero(),
         }
+    }
+
+    pub fn update_camera_position(&mut self, new_position: Vector2) {
+        self.camera_pos = new_position.floor();
+    }
+
+    pub fn make_position_relative(&self, absolute_pos: Vector2) -> Vector2 {
+        absolute_pos.floor() - self.camera_pos
     }
     
     /// Draws a colored box.
     pub fn draw_box(&self, color: &str, pos: Vector2, size: Vector2) {
+        let pos = self.make_position_relative(pos);
+
         self.ctx.set_fill_style_color(color);
         self.ctx.fill_rect(pos.x, pos.y, size.x, size.y);
     }
 
     /// Draws a colored circle.
     pub fn draw_circle(&self, color: &str, pos: Vector2, radius: f64) {
+        let pos = self.make_position_relative(pos);
+        
         self.ctx.begin_path();
         self.ctx.set_fill_style_color(color);
         self.ctx.arc(pos.x, pos.y, radius, 0.0, PI * 2.0, false);

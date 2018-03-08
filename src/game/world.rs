@@ -14,6 +14,7 @@ pub struct World {
     partitions: ObjectRef<Quadtree<Entity>>,
     renderer:   Renderer2D,
     running:    bool,
+    camera:     Camera,
 }
 
 impl World {
@@ -24,6 +25,7 @@ impl World {
             partitions: wrap_to_ref(Quadtree::new(Vector2::zero(), world_max_size / 2.0, 4)),
             renderer:   renderer,
             running:    true,
+            camera:     Camera::new(Vector2::new(640.0, 360.0))
         }
     }
 
@@ -52,15 +54,27 @@ impl World {
             entity_pos.push(pos);
         }
 
+        // Add the player
+        {
+            let player = wrap_to_ref(
+                Entity::new(0, Vector2::zero(), "#0000007f"));
+            self.partitions.borrow_mut().add(player.clone());
+            // Make camera follow it
+            self.camera.follow(Some(player));
+        }
+
         // Finally, add them
         {
-            let mut color_idx = 0;
+            let mut color_idx = 1;
             for pos in entity_pos {
                 println!("Adding entity at ({}, {})...", pos.x, pos.y);
                 self.partitions.borrow_mut().add(wrap_to_ref(Entity::new(color_idx as u32, pos, colors[color_idx % 3])));
                 color_idx += 1;
             }
         }
+
+        // Set camera position
+        self.camera.translate(Vector2::new(320.0, 180.0));
     }
 
     /// Executes a step in the World, updating logic, rendering and collision.
@@ -71,8 +85,15 @@ impl World {
         // == Clear screen pass == //
         self.renderer.clear();
 
+        // == Camera update pass == //
+        self.camera.update();
+        let local_camera_boundary = self.camera.bounding_circle();
+        self.renderer.update_camera_position({
+            local_camera_boundary.center - self.camera.half_viewport_size()
+        });
+
         // == Object iteration pass == //
-        let iterator = self.partitions.borrow().iter();
+        let iterator = self.partitions.borrow().local_iter(local_camera_boundary);
         for object in iterator {
             //println!("Render one");
             // == Update pass == //
@@ -93,5 +114,70 @@ impl World {
 
         // == Relocation pass == //
         let _ = self.partitions.borrow_mut().update_positions();
+        self.camera.update();
     }
 }
+
+
+// =============================
+
+use collision::primitives::Delimitable;
+use collision::primitives::AABB;
+use collision::primitives::Circle;
+
+#[derive(Clone)]
+pub struct Camera {
+    viewport: AABB,
+    follows:  Option<ObjectRef<GameObject>>,
+}
+
+impl Camera {
+    fn new(size: Vector2) -> Self {
+        Camera {
+            viewport: AABB {
+                center: Vector2::zero(),
+                halfws: [size.x / 2.0, size.y / 2.0],
+            },
+            follows: None,
+        }
+    }
+
+    fn update(&mut self) {
+        match self.follows {
+            Some(ref guy) => {
+                // TODO: This simple attribution looks like crap!
+                // We need to properly recalculate the camera position,
+                // just like in Sonic The Hedgehog games.
+                self.viewport.center = guy.borrow().get_position();
+            },
+            None => {},
+        }
+    }
+
+    fn translate(&mut self, position: Vector2) {
+        self.viewport.center = position;
+    }
+
+    fn follow(&mut self, object: Option<ObjectRef<GameObject>>) {
+        self.follows = object;
+    }
+
+    fn viewport_size(&self) -> Vector2 {
+        Vector2::new(self.viewport.halfws[0] * 2.0,
+                     self.viewport.halfws[1] * 2.0)
+    }
+
+    fn half_viewport_size(&self) -> Vector2 {
+        Vector2::new(self.viewport.halfws[0],
+                     self.viewport.halfws[1])
+    }
+}
+
+impl Delimitable for Camera {
+    fn bounding_circle(&self) -> Circle {
+        let mut bounds = self.viewport.bounding_circle();
+        bounds.radius *= 2.0;
+        bounds
+    }
+}
+

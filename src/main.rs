@@ -90,8 +90,8 @@ fn main() {
         .unwrap()
         .try_into()
         .unwrap();
-    canvas.set_width(580);
-    canvas.set_height(500);
+    canvas.set_width(640);
+    canvas.set_height(360);
 
     // Create renderer
     let renderer: Renderer2D = Renderer2D::new(&canvas);
@@ -140,6 +140,7 @@ fn main() {
         }
     });
 
+    // Errr, hmmm, game loop.
     web::window().request_animation_frame(move |_| {
         semi_loop(world.clone(), get_current_time());
     });
