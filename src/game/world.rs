@@ -84,6 +84,7 @@ impl World {
 
         // == Clear screen pass == //
         self.renderer.clear();
+        self.renderer.draw_box("#aaa", Vector2::zero(), self.camera.viewport_size());
 
         // == Camera update pass == //
         self.camera.update();
@@ -125,6 +126,19 @@ use collision::primitives::Delimitable;
 use collision::primitives::AABB;
 use collision::primitives::Circle;
 
+
+// Camera constants
+mod camera {
+    pub const X_MIN_FACTOR:     f64 = -0.45;
+    pub const X_MAX_FACTOR:     f64 =  0.5;
+    pub const Y_AIR_MIN_FACTOR: f64 = -0.26;
+    pub const Y_AIR_MAX_FACTOR: f64 =  0.53;
+    pub const Y_FACTOR:         f64 =  0.4;
+    pub const MOVE_SPEED:       f64 = 16.0;
+    pub const MOVE_SPEED_Y_G:   f64 =  6.0; // unused
+}
+
+
 #[derive(Clone)]
 pub struct Camera {
     viewport: AABB,
@@ -145,10 +159,61 @@ impl Camera {
     fn update(&mut self) {
         match self.follows {
             Some(ref guy) => {
+                let object_position = guy.borrow().get_position();
+                let mut camera_position = self.viewport.center;
                 // TODO: This simple attribution looks like crap!
                 // We need to properly recalculate the camera position,
                 // just like in Sonic The Hedgehog games.
-                self.viewport.center = guy.borrow().get_position();
+
+                // Calculate camera boundaries
+                let boundaries =
+                    ( camera_position.x - 16.0,  // 0: Minimum X
+                      camera_position.x,         // 1: Maximum X
+                      camera_position.y - 48.0,  // 2: Minimum Y on air
+                      camera_position.y + 16.0,  // 3: Maximum Y on air
+                      camera_position.y - 16.0   // 4: Y on ground -- unused
+                    ); 
+
+                // Calculate how much the object exceeds the boundaries,
+                // with a maximum speed so it lags behind on high
+                // player speeds
+                let mut exceed = Vector2::zero();
+
+                // X axis
+                if object_position.x >= boundaries.1 {
+                    exceed.x = object_position.x - boundaries.1;
+                } else if object_position.x <= boundaries.0 {
+                    exceed.x = object_position.x - boundaries.0;
+                }
+
+                // Do not exceed move speed when following
+                exceed.x = exceed.x.max(-camera::MOVE_SPEED)
+                    .min(camera::MOVE_SPEED);
+
+                
+                // Y axis
+                // We will always assume that the player is on air.
+                // If you need to use the ground var, just calculate the exceed
+                // using `boundaries.4`.
+                if object_position.y >= boundaries.3 {
+                    exceed.y = object_position.y - boundaries.3;
+                } else if object_position.y <= boundaries.2 {
+                    exceed.y = object_position.y - boundaries.2;
+                }
+
+                // The speed limit should also vary depending on player's Y
+                // speed.
+                // As we don't really have speed information right now,
+                // we assume a higher speed.
+                exceed.y = exceed.y.max(-camera::MOVE_SPEED)
+                    .min(camera::MOVE_SPEED);
+
+                // Add this excess to camera position
+                camera_position.x += exceed.x;
+                camera_position.y += exceed.y;
+
+                // Give new position to the camera
+                self.viewport.center = camera_position;
             },
             None => {},
         }

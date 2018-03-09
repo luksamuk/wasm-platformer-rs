@@ -26,30 +26,37 @@ impl Renderer2D {
     }
 
     pub fn update_camera_position(&mut self, new_position: Vector2) {
-        self.camera_pos = new_position.floor();
+        self.camera_pos = new_position;
     }
 
     pub fn make_position_relative(&self, absolute_pos: Vector2) -> Vector2 {
-        absolute_pos.floor() - self.camera_pos
+        absolute_pos - self.camera_pos
     }
     
     /// Draws a colored box.
     pub fn draw_box(&self, color: &str, pos: Vector2, size: Vector2) {
-        let pos = self.make_position_relative(pos);
-
         self.ctx.set_fill_style_color(color);
         self.ctx.fill_rect(pos.x, pos.y, size.x, size.y);
     }
 
+    pub fn draw_box_rel(&self, color: &str, pos: Vector2, size: Vector2) {
+        let pos = self.make_position_relative(pos);
+        self.draw_box(color, pos, size);
+    }
+
+
     /// Draws a colored circle.
     pub fn draw_circle(&self, color: &str, pos: Vector2, radius: f64) {
-        let pos = self.make_position_relative(pos);
-        
         self.ctx.begin_path();
         self.ctx.set_fill_style_color(color);
         self.ctx.arc(pos.x, pos.y, radius, 0.0, PI * 2.0, false);
         js!{ @(no_return) @{&self.ctx}.fill(); };
         self.ctx.close_path();
+    }
+
+    pub fn draw_circle_rel(&self, color: &str, pos: Vector2, radius: f64) {
+        let pos = self.make_position_relative(pos);
+        self.draw_circle(color, pos, radius);
     }
     
     /// Clears the screen.

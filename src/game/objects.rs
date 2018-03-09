@@ -45,10 +45,15 @@ impl GameObject for Entity {
             self.counter = ((self.counter as u32 +
                              (120.0 * dt) as u32)
                             % 360) as f64;
-            
-            let distance = 250.0 * (self.counter * 2.0).to_radians().sin();
-            self.position.x = 250.0 + (distance * self.counter.to_radians().cos());
-            self.position.y = 250.0 + (distance * self.counter.to_radians().sin());
+
+            // Uhhh some random path I don't know how to describe
+            //let distance = 250.0 * (self.counter * 2.0).to_radians().sin();
+            //self.position.x = 250.0 + (distance * self.counter.to_radians().cos());
+            //self.position.y = 250.0 + (distance * self.counter.to_radians().sin());
+
+            // Ellipse
+            self.position.x = 250.0 + 40.0 * 5.0 * self.counter.to_radians().cos();
+            self.position.y = 250.0 + 20.0 * 5.0 * self.counter.to_radians().sin();
         } else {
             // Bigger circles move gracefully
             self.counter = ((self.counter as u32 + (120.0 * dt) as u32) % 1440) as f64;
@@ -66,7 +71,7 @@ impl GameObject for Entity {
     }
 
     fn draw(&mut self, renderer: &Renderer2D) {
-        renderer.draw_circle(
+        renderer.draw_circle_rel(
             if self.id != 0 && self.change_color { "#1122337f" } else { self.color.as_ref() },
             self.position,
             self.radius);
