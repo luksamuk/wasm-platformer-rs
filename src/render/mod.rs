@@ -1,7 +1,9 @@
 use types::Vector2;
-use stdweb::web::html_element::CanvasElement;
+use stdweb::web::html_element::{ CanvasElement, ImageElement };
 use stdweb::web::CanvasRenderingContext2d;
 use std::f64::consts::PI;
+
+pub mod imaging;
 
 
 /// Represents a 2D renderer.
@@ -57,6 +59,38 @@ impl Renderer2D {
     pub fn draw_circle_rel(&self, color: &str, pos: Vector2, radius: f64) {
         let pos = self.make_position_relative(pos);
         self.draw_circle(color, pos, radius);
+    }
+
+    pub fn draw_image(&self, img: ImageElement, pos: Vector2) {
+        let _ = self.ctx.draw_image(img, pos.x, pos.y);
+    }
+
+    pub fn draw_image_rel(&self, img: ImageElement, pos: Vector2) {
+        let pos = self.make_position_relative(pos);
+        self.draw_image(img, pos);
+    }
+
+    pub fn draw_tile(&self, img: ImageElement, pos: Vector2, tile_size: Vector2, frame: u32) {
+        // Calculate frame position
+        let img_size = Vector2::new(img.width() as f64, img.height() as f64);
+        let max_x_frames = (img_size.x / tile_size.x).floor() as u32;
+
+        let cows_and_rows = Vector2::new((frame / max_x_frames) as f64,
+                                         (frame % max_x_frames) as f64);
+        
+        let frame_pos = Vector2::new(cows_and_rows.x * tile_size.x,
+                                     cows_and_rows.y * tile_size.y);
+        
+        let _ = self.ctx.draw_image_s(img,
+                                      frame_pos.x, frame_pos.y,
+                                      tile_size.x, tile_size.y,
+                                      pos.x, pos.y,
+                                      tile_size.x, tile_size.y);
+    }
+
+    pub fn draw_tile_rel(&self, img: ImageElement, pos: Vector2, tile_size: Vector2, frame: u32) {
+        let pos = self.make_position_relative(pos);
+        self.draw_tile(img, pos, tile_size, frame);
     }
     
     /// Clears the screen.
