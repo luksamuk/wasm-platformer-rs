@@ -54,15 +54,6 @@ impl World {
             entity_pos.push(pos);
         }
 
-        // Add the player
-        {
-            let player = wrap_to_ref(
-                Entity::new(0, Vector2::zero(), "#0000007f"));
-            self.partitions.borrow_mut().add(player.clone());
-            // Make camera follow it
-            self.camera.follow(Some(player));
-        }
-
         // Finally, add them
         {
             let mut color_idx = 1;
@@ -71,6 +62,15 @@ impl World {
                 self.partitions.borrow_mut().add(wrap_to_ref(Entity::new(color_idx as u32, pos, colors[color_idx % 3])));
                 color_idx += 1;
             }
+        }
+
+        // Add the player
+        {
+            let player = wrap_to_ref(
+                Entity::new(0, Vector2::new(320.0, 180.0), "#0000007f"));
+            self.partitions.borrow_mut().add(player.clone());
+            // Make camera follow it
+            self.camera.follow(Some(player));
         }
 
         // Set camera position

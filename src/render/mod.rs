@@ -71,12 +71,15 @@ impl Renderer2D {
     }
 
     pub fn draw_tile(&self, img: ImageElement, pos: Vector2, tile_size: Vector2, frame: u32) {
+        // Correct animation position
+        let pos = pos - Vector2::new(tile_size.x / 2.0, tile_size.y / 2.0);
+        
         // Calculate frame position
         let img_size = Vector2::new(img.width() as f64, img.height() as f64);
         let max_x_frames = (img_size.x / tile_size.x).floor() as u32;
 
-        let cows_and_rows = Vector2::new((frame / max_x_frames) as f64,
-                                         (frame % max_x_frames) as f64);
+        let cows_and_rows = Vector2::new((frame % max_x_frames) as f64,
+                                         (frame / max_x_frames) as f64);
         
         let frame_pos = Vector2::new(cows_and_rows.x * tile_size.x,
                                      cows_and_rows.y * tile_size.y);

@@ -44,6 +44,10 @@ impl TextureAtlas {
     pub fn draw_frame(&self, renderer: &Renderer2D, pos: Vector2, frame: u32) {
         renderer.draw_tile_rel(self.texture.get_data(), pos, self.tile_size, frame);
     }
+
+    pub fn draw_all(&self, renderer: &Renderer2D, pos: Vector2) {
+        renderer.draw_image_rel(self.texture.get_data(), pos);
+    }
 }
 
 
@@ -74,6 +78,7 @@ impl Animator {
     pub fn register(&mut self, name: &str, default_spd: f64, data: &[u32]) {
         self.animations.insert(String::from(name),
                                (default_spd, Vec::from(data)));
+        println!("Registered {} with {} frames", name, data.len());
     }
 
     pub fn update(&mut self, dt: f64) {
@@ -87,8 +92,7 @@ impl Animator {
             if self.time_accum >= self.current_speed {
                 // Reset timer and calculate our frames skip
                 let frames_passed =
-                    (self.time_accum.floor() as u32) %
-                    (self.current_speed.floor() as u32);
+                    (self.time_accum / self.current_speed).floor() as u32;
                 self.time_accum -= frames_passed as f64 * self.current_speed;
 
                 // We take a peek at our animation data so we
@@ -98,6 +102,7 @@ impl Animator {
                         // Determine current frame
                         self.current_frame += frames_passed;
                         self.current_frame %= data.len() as u32;
+                        //println!("Update: frame is {}", self.current_frame);
                     },
                     None => {
                         // Uhhh this is unexpected.
@@ -110,7 +115,13 @@ impl Animator {
 
     pub fn draw(&self, renderer: &Renderer2D, pos: Vector2, atlas: &TextureAtlas) {
         if self.current_anim.is_some() {
-            atlas.draw_frame(renderer, pos, self.current_frame);
+            match self.current_data {
+                Some(ref data) => {
+                    let current_frame = data[self.current_frame as usize];
+                    atlas.draw_frame(renderer, pos, current_frame);
+                },
+                None => {},
+            }
         }
     }
 
@@ -127,13 +138,25 @@ impl Animator {
                             self.current_frame = 0;
                             self.current_speed = pair.0;
                             self.current_data  = Some(pair.1.clone());
-                            //self.time_accum = 0.0;
+                            self.time_accum = 0.0;
                         },
-                        None => {},
+                        None => {println!("Couldn't find animation \"{}\".", name);},
                     }
                 }
             },
-            None => {},
+            None => {
+                match self.animations.get(&String::from(name)) {
+                    Some(ref pair) => {
+                        // We actually change the animation now
+                        self.current_anim = Some(String::from(name));
+                        self.current_frame = 0;
+                        self.current_speed = pair.0;
+                        self.current_data  = Some(pair.1.clone());
+                        self.time_accum = 0.0;
+                    },
+                    None => {println!("Couldn't find animation \"{}\".", name);},
+                }
+            },
         }
     }
 }
