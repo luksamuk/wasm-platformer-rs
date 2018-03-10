@@ -3,6 +3,8 @@
 #[macro_use]
 extern crate stdweb;
 extern crate ref_eq;
+#[macro_use]
+extern crate bitflags;
 
 use stdweb::unstable::TryInto;
 use stdweb::traits::IMouseEvent;
@@ -30,7 +32,8 @@ use stdweb::web::event::{
 pub mod common;    // Game objects, special println!, etc
 pub mod types;     // Vectors, matrices, etc
 pub mod collision; // Bounding volumes, collision, partitioning, etc
-pub mod render;    // Rendering and etc
+pub mod render;    // Rendering, textures, animation, etc
+pub mod input;     // General game I/O, etc
 pub mod game;      // Actual specific game objects (Entity, etc)
 
 use game::world::World;
@@ -99,6 +102,12 @@ fn main() {
     // Create world
     let mut world: World = World::new(renderer, 800.0);
     world.init();
+
+    // Bind common keys
+    {
+        use input::GamepadButton;
+        world.input.gamepad.map_button("s", GamepadButton::A);
+    }
     
 
 

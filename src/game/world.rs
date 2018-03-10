@@ -8,6 +8,8 @@ use common::objects::GameObject;
 use common::objects::ObjectRef;
 use common::objects::wrap_to_ref;
 
+use input::InputState;
+
 /// Represents a game world.
 #[derive(Clone)]
 pub struct World {
@@ -15,6 +17,7 @@ pub struct World {
     renderer:   Renderer2D,
     running:    bool,
     camera:     Camera,
+    pub input:  InputState,
 }
 
 impl World {
@@ -25,7 +28,8 @@ impl World {
             partitions: wrap_to_ref(Quadtree::new(Vector2::zero(), world_max_size / 2.0, 4)),
             renderer:   renderer,
             running:    true,
-            camera:     Camera::new(Vector2::new(640.0, 360.0))
+            camera:     Camera::new(Vector2::new(640.0, 360.0)),
+            input:      InputState::new(),
         }
     }
 
@@ -35,7 +39,6 @@ impl World {
         // Add test entities
         let mut entity_pos = vec![];
         let colors = vec!["#ff00007f", "#00ff007f", "#0000ff7f"];
-
 
         // Fixed entities
         entity_pos.push(Vector2 { x: 200.0, y: 200.0 });

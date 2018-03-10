@@ -7,3 +7,4 @@ description = "A basic example of Rust being compiled to WebAssembly, using Rust
 [dependencies]
 stdweb = "0.4.1"
 ref_eq = "1.0.0"
+bitflags = "1.0.1"
