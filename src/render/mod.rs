@@ -1,6 +1,6 @@
 use types::Vector2;
 use stdweb::web::html_element::{ CanvasElement, ImageElement };
-use stdweb::web::CanvasRenderingContext2d;
+use stdweb::web::{ CanvasRenderingContext2d, FillRule };
 use std::f64::consts::PI;
 
 pub mod imaging;
@@ -52,7 +52,7 @@ impl Renderer2D {
         self.ctx.begin_path();
         self.ctx.set_fill_style_color(color);
         self.ctx.arc(pos.x, pos.y, radius, 0.0, PI * 2.0, false);
-        js!{ @(no_return) @{&self.ctx}.fill(); };
+        self.ctx.fill(FillRule::NonZero);
         self.ctx.close_path();
     }
 
