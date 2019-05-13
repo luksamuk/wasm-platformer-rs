@@ -78,6 +78,8 @@ impl Renderer2D {
         let img_size = Vector2::new(img.width() as f64, img.height() as f64);
         let max_x_frames = (img_size.x / tile_size.x).floor() as u32;
 
+        if max_x_frames == 0 { return; }
+
         let cows_and_rows = Vector2::new((frame % max_x_frames) as f64,
                                          (frame / max_x_frames) as f64);
         
